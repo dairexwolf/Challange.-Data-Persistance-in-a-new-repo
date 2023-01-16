@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -12,20 +13,38 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
-    
+    public Text BestScoreText;
+    public GameObject BestScoreScreen;
+    public GameObject NameInputField;
+
     private bool m_Started = false;
     private int m_Points;
-    
-    private bool m_GameOver = false;
+    private int m_BestScore;
 
-    
+    private bool m_GameOver = false;
+    private bool m_TypingName = false;
+
+    private void Awake()
+    {
+        if (DataSaver.Instance.haveData())
+        {
+            NameInputField.GetComponent<TMP_InputField>().text = DataSaver.Instance.ScoreData.name;
+            m_BestScore = DataSaver.Instance.ScoreData.hightScore;
+            UpdateBestScore();
+        }
+        else
+        {
+            m_BestScore = 1;
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
-        
-        int[] pointCountArray = new [] {1,1,2,2,5,5};
+
+        int[] pointCountArray = new[] { 1, 1, 2, 2, 5, 5 };
         for (int i = 0; i < LineCount; ++i)
         {
             for (int x = 0; x < perLine; ++x)
@@ -52,18 +71,38 @@ public class MainManager : MonoBehaviour
                 Ball.transform.SetParent(null);
                 Ball.AddForce(forceDir * 2.0f, ForceMode.VelocityChange);
             }
+            else if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                Exit();
+            }
         }
         else if (m_GameOver)
         {
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (m_Points > m_BestScore)
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                m_TypingName = true;
+                if (!BestScoreScreen.activeInHierarchy)
+                {
+                    BestScoreScreen.SetActive(true); 
+                }
             }
-            else if(Input.GetKeyDown(KeyCode.Escape))
+            if (!m_TypingName)
             {
-                SceneManager.LoadScene(0);  
+                if (Input.GetKeyDown(KeyCode.Space))
+                {
+                    SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                }
+                else if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    Exit();
+                }
             }
         }
+    }
+
+    void Exit()
+    {
+        SceneManager.LoadScene(0);
     }
 
     void AddPoint(int point)
@@ -76,5 +115,21 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+    }
+
+    public void FinishTypeName()
+    {
+        m_TypingName = false;
+        m_BestScore = m_Points;
+        DataSaver.Instance.ScoreData.name = NameInputField.GetComponent<TMP_InputField>().text;
+        DataSaver.Instance.ScoreData.hightScore = m_BestScore;
+        DataSaver.Instance.SaveData();
+        UpdateBestScore();
+        BestScoreScreen.SetActive(false);
+    }
+
+    public void UpdateBestScore()
+    {
+        BestScoreText.text = "Best Score: " + DataSaver.Instance.ScoreData.name + " - " + m_BestScore;
     }
 }
