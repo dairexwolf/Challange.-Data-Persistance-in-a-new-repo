@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class DataSaver : MonoBehaviour
 {
-    public static DataSaver Instance;
+    public static DataSaver Instance { get; private set; }
 
     private Data scoreData;
 
